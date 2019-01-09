@@ -1,0 +1,544 @@
+<!--
+***************************************************************************  
+**  Program  : admin.html, part of DONOFF
+**  Version  : v0.3.2
+**
+**  Copyright (c) 2018 Willem Aandewiel
+**
+**  TERMS OF USE: MIT License. See bottom of file.                                                            
+***************************************************************************      
+-->
+<!DOCTYPE HTML><html lang='en'>
+  <head>
+  <meta charset='UTF-8'>
+  <style type='text/css'>
+    body {background-color: lightgray;}
+  </style>
+  </head>
+  <body>
+	<h1><div id="FWversion">DONOFF</div></h1>
+	<h2>Device Information</h2>
+   
+  <table>
+  <tr style='vertical-align:top;'><td> <!-- this is where all the forms go -->
+ 
+  <form name='formAdmin' method='POST'>
+  
+  <fieldset id='fsHostName' style='width:600px;'>
+    <legend>this Device</legend>
+    hostName &nbsp; 
+    <input type='text' style='height:25px; font-size:15px;' onchange='fieldChange(event, "hostName");'
+  		name='hostName' placeholder='deviceHostName' required value='deviceHostName' maxlength='18'>
+  		.local
+  		&nbsp; &nbsp;
+  		IPaddress &nbsp;
+      <input type='text' style='height:25px; font-size:15px;' readonly
+    		name='deviceIPaddress' placeholder='deviceIPaddress' required value='deviceIPaddress' maxlength='15'>
+  </fieldset>
+
+  <fieldset id='fsDeviceRole'>
+    <legend>Device Role</legend>
+    <span>
+    	this Device is a &nbsp;
+      <input type='radio' id='Master' onchange='fieldChange(event, "Role");'
+              name='Role' value='M'  />
+      <label for='Master'>Master</label>
+    </span>
+    <span>
+      <input type='radio' id='Slave' onchange='fieldChange(event, "Role");'
+             name='Role' value='S'   />
+      <label for='Slave'>Slave</label>
+    </span>
+  </fieldset>
+
+  <fieldset id='fsMasterName'>
+    <legend>Master</legend>
+    hostName &nbsp;
+    <input type='text' style='height:25px; font-size:15px;' READONLY 
+  		name='masterHostName' placeholder='masterHostName' required value='masterHostName' maxlength='12'>
+  		.local
+  	&nbsp; &nbsp;
+  	IPaddress &nbsp;
+    <input type='text' style='height:25px; font-size:15px;' onchange='fieldChange(event, "masterIPaddress");'
+  		name='masterIPaddress' placeholder='masterIPaddress' required value='masterIPaddress' maxlength='15'>
+  </fieldset>
+  
+  <fieldset id='fsfieldName'>
+    <legend>Device Type</legend>
+    <span>
+    	this Device is a &nbsp;
+      <input type='radio' id='Dimmer' onchange='fieldChange(event, "deviceType");'
+             name='deviceType' value='D' />
+      <label for='Dimmer'>Dimmer</label>
+    </span>
+    <span>
+      <input type='radio' id='Switch' onchange='fieldChange(event, "deviceType");'
+             name='deviceType' value='S'  />
+      <label for='Switch'>Switch</label>
+    </span>
+  </fieldset>
+
+  <fieldset id='fsBuiltInLed'>
+    <legend>BuiltIn Led pin </legend>
+    GPIO &nbsp; 
+    <input type='number' style='height:25px; font-size:15px;'  min='-1' max='16' onchange='fieldChange(event, "localBuiltInLed");' 
+  		name='localBuiltInLed' placeholder='localBuiltInLed' required value='0' maxlength='3'> (-1 is none) &nbsp;
+    <span>
+  </fieldset>
+
+  <fieldset id='fsSwitchpin'>
+    <legend>external Switch </legend>
+    GPIO &nbsp; 
+    <input type='number' style='height:25px; font-size:15px;'  min='-1' max='16' onchange='fieldChange(event, "localSwitchGPIO");' 
+  		name='localSwitchGPIO' placeholder='localSwitchGPIO' required value='0' maxlength='3'> (-1 is none) &nbsp;
+    <span>
+      <input type='radio' id='localSwitchToggle' onchange='fieldChange(event, "localSwitchToggle");'
+             name='localSwitchToggle' value='T'  />
+      <label for='localSwitchToggle'>Toggle</label>
+    </span>
+    <span>
+      <input type='radio' id='localSwitchToggle' onchange='fieldChange(event, "localSwitchToggle");'
+             name='localSwitchToggle' value='P'  />
+      <label for='localSwitchToggle'>Pushbutton</label>
+    </span>
+  </fieldset>
+
+  <fieldset id='fsGPIOpin'>
+    <legend>PWM out </legend>
+    GPIO &nbsp; 
+    <input type='number' style='height:25px; font-size:15px;'  min='0' max='16' onchange='fieldChange(event, "localGPIO");' 
+  		name='localGPIO' placeholder='localDeviceGPIO' required value='0' maxlength='3'> &nbsp; &nbsp;
+    <span>
+      <input type='radio' id='non-inverted' onchange='fieldChange(event, "GPIONI");'
+             name='GPIONI' value='N'  />
+      <label for='GPIO-Non-Inverted'>Non-Inverted</label>
+    </span>
+    <span>
+      <input type='radio' id='inverted' onchange='fieldChange(event, "GPIONI");'
+             name='GPIONI' value='I'  />
+      <label for='GPIO-Inverted'>Inverted</label>
+    </span>
+    <div id='localPWMfreq'>
+    PWM &nbsp;
+    <input type='number' style='height:25px; font-size:15px;'  min='200' max='900'  step='5'
+  		name='localPWMfreq' placeholder='localPWMfreq' required value='0' maxlength='3'> frequency in Hz &nbsp; &nbsp;
+  	</div>
+  </fieldset>
+
+  <fieldset id='fsMinState'>
+    <legend>Min percent </legend>
+    <input type='number' style='height:25px; font-size:15px;'  min='0' max='100' onchange='fieldChange(event, "minState");' 
+  	   name='minState' placeholder='' required value='0' maxlength='3'>
+  </fieldset>
+
+  <fieldset id='fsMaxState'>
+    <legend>Max percent </legend>
+    <input type='number' style='height:25px; font-size:15px;'  min='0' max='100' onchange='fieldChange(event, "maxState");' 
+  	   name='maxState' placeholder='deviceMaxState' required value='1' maxlength='3'>
+  </fieldset>
+    
+  <fieldset id='fsDefaultState'>
+    <legend>default Light State</legend>
+    <input type='number' style='height:25px; font-size:15px;'  min='0' max='100' onchange='fieldChange(event, "defaultState");' 
+  	   name='defaultState' placeholder='deviceDefaultState' required value='0' maxlength='3'>
+  </fieldset>
+  
+  <fieldset>
+    <legend>device Label</legend>
+    <input type='text' style='height:25px; font-size:15px;' onchange='fieldChange(event, "Label");' 
+           name='Label' placeholder='deviceLabel' required value='deviceLabel' maxlength='20'>
+  </fieldset>
+
+  </td> <!-- first table EndOffirst column -->
+
+  <td><br>
+  <table id='rightTable' style='width: 400px; outline:thin solid;'> <!-- second column, second table -->
+  	<tbody>
+  		<tr>
+  			<th style='text-align:left; width:100px'>Role</th>
+  			<th style='text-align:left; width:150px'>Device&nbsp;Name</th>
+  			<th style='text-align:left; width:150px'>IPaddress</th>
+  		</tr>
+  		<tr style='vertical-align:top;'>
+  			<td style='text-align:left;'>Master</td>
+  			<td style='text-align:left;'>DONOFF</td>
+  			<td style='text-align:left;'>
+					<span id='masterInfo'>masterInfo</span>
+				</td>
+			</tr>
+			<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+			<!--CLIENTS-->
+			<tr id='slaveInfo'>
+				<td id='slaveip'></td>
+			</tr>
+		</tbody>
+  </table> <!-- end second table -->
+  <td style='width:40%;'>&nbsp;</td>
+  </tr>
+  </table> <!-- end first table -->
+
+  <span style='width: 15%'>
+    <input type='submit' class='button' name='SUBMIT' value='Save Configuration' onclick='saveFields();'>
+  </span>
+
+  </form>
+
+  <hr>
+  <div style='width: 70%;'> <!-- outer 70% -->
+    <span style='width: 15%'>
+      <input type='submit' class='button' name='SUBMIT' 
+             value='Filesystem Maintenance' onclick='toNewLocation("/maintenance");'>
+    </span>
+    <span style='width: 15%'>
+      <input type='submit' class='button' name='SUBMIT' 
+      		 	 value='Reboot' onclick='toNewLocation("/ReBoot");'>
+    </span>
+    <span style='width: 15%'>
+      <input type='submit' class='button' name='SUBMIT' 
+             value='Exit Admin' onclick='toNewLocation("/");'>
+    </span>
+  
+  </div>  <!-- End outer 70% -->
+  <div style='width: 20%'>&nbsp;</div>
+
+ 	<br><HR>
+ 	<p id="action"> - </p>
+ 	<p id="description"> - </p>
+ 	<p id="status"> - </p>
+
+  </body>
+  
+  
+<script>
+"use strict";
+
+  let masterTimer;
+  let slaveTimer;
+  let firstMaster = true;
+  let firstSlave	= true;
+  let request;
+  
+  window.onload=bootsTrap;
+  function bootsTrap() {
+    firstMaster = true;
+    clearInterval(masterTimer);  
+    firstSlave = true;
+    clearInterval(slaveTimer);  
+    moreStatus();
+    
+  } // bootsTrap()
+  
+    
+  function moreStatus() {
+  	console.log("moreStatus() ..");
+    document.getElementById("action").innerHTML = "Processing Admin Status";
+    let server = "/adminStatus.json?msgType=Status";
+    request = new XMLHttpRequest();
+    request.onreadystatechange = updateAsyncStatus;
+    request.open("GET", server, true);
+    request.send(null);
+
+  } // moreStatus()
+  
+  function updateAsyncStatus() {
+    if ((request.readyState == 4) && (request.status == 200)) {
+    	//console.log("updateAsyncStatus(): readyState[4], status[200]");
+      let result = request.responseText;
+      document.getElementById("status").innerHTML = result;
+      let jsObject = JSON.parse(result);
+      // get the form
+      let form = document.forms.formAdmin; // <form name="formAdmin"> element
+      
+      for (let prop in jsObject) {
+        if (prop == "msgType")	continue;
+        console.log("updateAsyncStatus() jsObject[" + prop + "] value[" + jsObject[prop] + "]");
+        let fieldName  	= prop; 
+        let fieldValue  = jsObject[prop]; 
+
+        if (document.forms['formAdmin'][fieldName]) {
+        	document.forms['formAdmin'][fieldName].value = fieldValue;
+        } else {
+        	console.log("Cannot find [" + fieldName + "]");
+        }
+      }	// for ...
+
+  		if (document.forms['formAdmin']['Role'].value == "M") {
+  			document.getElementById('fsMasterName').style.display = "none"; 
+       	document.forms['formAdmin']['masterIPaddress'].value = document.forms['formAdmin']['deviceIPaddress'].value;
+  		} else {
+  			document.getElementById('fsMasterName').style.display = "block"; 
+  		}
+
+  		if (document.forms['formAdmin']['deviceType'].value == "D") {
+  			document.getElementById('localPWMfreq').style.display = "block"; 
+  		} else {
+  			document.getElementById('localPWMfreq').style.display = "none"; 
+  		}
+  		moreFWversion();
+  		
+  	}	// request.readyState
+  } // updateAsyncStatus()
+  
+    
+  function moreFWversion() {
+  	console.log("moreFWversion() ..");
+    document.getElementById("action").innerHTML = "Processing FWversion";
+    
+    request = new XMLHttpRequest();
+    request.onreadystatechange = updateAsyncFWversion;
+    let server = "/adminStatus.json?msgType=FWversion";
+    request.open("GET", server, true);
+    request.send(null);
+
+  } // moreFWversion()
+  
+  function updateAsyncFWversion() {
+    if ((request.readyState == 4) && (request.status == 200)) {
+    	//console.log("updateAsyncFWversion(): readyState[4], status[200]");
+      let result = request.responseText;
+      document.getElementById("status").innerHTML = result;
+      let jsObject = JSON.parse(result);	// make a javascriptObject from a jsonObject
+      // get the form
+      for (let prop in jsObject) {
+        if (prop == "msgType")	continue;
+        console.log("updateAsyncFWversion() jsObject[" + prop + "] value[" + jsObject[prop] + "]");
+        let fieldName  	= prop; 
+        let fieldValue  = jsObject[prop]; 
+        if (fieldName == "FWversion") {
+          document.getElementById(fieldName).innerHTML = "DONOFF ["+ fieldValue +"]";
+          continue;
+        }
+      }	// for prop ..
+
+      moreMaster();
+
+  	}	// request.readyState
+  } // updateAsyncFWversion()
+    
+    
+  function moreMaster() {
+  	console.log("moreMaster() ..");
+    clearInterval(masterTimer);  
+    if (firstMaster) {
+    	console.log("setInterval(moreMaster, 10000)");
+     	masterTimer = setInterval(moreMaster, 10000); 	// 10000 MS == 10 seconden
+    } else {
+     	console.log("setInterval(moreMaster, 60000)");
+     	masterTimer = setInterval(moreMaster, 60000); 	// 60000 MS == 60 seconden
+    }
+    document.getElementById("action").innerHTML = "Processing Master";
+    let server = "/adminStatus.json?msgType=masterInfo";
+    request = new XMLHttpRequest();
+    request.onreadystatechange = updateAsyncMaster;
+    request.open("GET", server, true);
+    request.send(null);
+
+  } // moreMaster()
+
+  function updateAsyncMaster() {
+    if ((request.readyState == 4) && (request.status == 200)) {
+    	//console.log("updateAsyncMaster(): readyState[4], status[200]");
+      let result = request.responseText;
+      document.getElementById("status").innerHTML = result;
+      let jsObject = JSON.parse(result);
+      // get the form
+      let form = document.forms.formAdmin; // <form name="formAdmin"> element
+
+      for (let prop in jsObject) {
+        if (prop == "msgType")	continue;
+        console.log("updateAsyncMaster() jsObject[" + prop + "] value[" + jsObject[prop] + "]");
+        let fieldName  	= prop; 
+        let fieldValue  = jsObject[prop]; 
+        if (fieldName == "masterInfo") {
+          document.getElementById(fieldName).innerHTML = fieldValue;
+          firstMaster = false;
+        }
+      }	// for prop ..
+        		
+      moreSlave();
+
+    }	// request.readyState
+  } // updateAsyncMaster()
+    
+    
+  function moreSlave() {
+  	console.log("moreSlave() ..");
+   	console.log("clearInterval(slaveTimer);");
+    clearInterval(slaveTimer);  
+    if (firstSlave) {
+     	console.log("setInterval(moreSlave, 10000)");
+ 			slaveTimer = setInterval(moreSlave, 10000); 	// 10000 MS == 10 seconden
+    } else {
+     	console.log("setInterval(moreSlave, 60000)");
+     	slaveTimer = setInterval(moreSlave, 60000); 	// 60000 MS == 60 seconden
+    }
+    document.getElementById("action").innerHTML = "Processing Slave";
+
+    let server = "/adminStatus.json?msgType=slaveInfo";
+    request = new XMLHttpRequest();
+    request.onreadystatechange = updateAsyncSlave;
+    request.open("GET", server, true);
+    request.send(null);
+
+  } // moreSlave()
+
+  function updateAsyncSlave() {
+    if ((request.readyState == 4) && (request.status == 200)) {
+    	//console.log("updateAsyncSlave(): readyState[4], status[200]");
+    	let slaveHtml = "";
+      let result = request.responseText;
+      document.getElementById("status").innerHTML = result;
+      let jsObject = JSON.parse(result);	// this makes a javascriptObject from a jsonObjet
+
+      for (let prop in jsObject) {
+        if (prop == "msgType")	continue;
+        console.log("updateAsyncSlave() jsObject[" + prop + "]");
+        if (prop == "slaveInfo") {
+        	for (let Clnt in jsObject.slaveInfo) {
+        		console.log("Slave[" + Clnt + "]=>[" + jsObject.slaveInfo[Clnt].Slave + "], ["+jsObject.slaveInfo[Clnt].IP + "]");
+       			if (jsObject.slaveInfo[Clnt].IP == 'Found') {
+       				continue;	// skip "Not Found" messages
+       			}
+       			firstSlave = false;
+        		slaveHtml += "<tr id='" + jsObject.slaveInfo[Clnt].IP + "'>";
+        		slaveHtml += "<td>Slave</td>";
+        		slaveHtml += "<td>" + jsObject.slaveInfo[Clnt].Slave + "</td>";
+        		slaveHtml += "<td>" + jsObject.slaveInfo[Clnt].IP + "</td>";
+        		slaveHtml += "</tr>";
+        		
+        		//console.log("updateAsyncSlave(): " + slaveHtml);
+        		if (document.getElementById(jsObject.slaveInfo[Clnt].IP)) {        			
+        			//console.log("html [" + slaveHtml +"]");
+       				document.getElementById(jsObject.slaveInfo[Clnt].IP).outerHTML = slaveHtml;
+        		} else if (document.getElementById('slaveInfo')) {
+        			slaveHtml += "<tr id='slaveInfo'><td></td></tr>";
+        			//console.log("html [" + slaveHtml +"]");
+        			document.getElementById('slaveInfo').outerHTML = slaveHtml;
+        		} else {
+        			console.log("Some error with [" + jsObject.slaveInfo[Clnt].IP + "]");
+        		}
+        		slaveHtml = "";
+        	}
+        }
+      }	// for prop ...
+
+  	}	// request.readyState
+  } // updateAsyncSlave()
+  
+  
+  function fieldChange(event, fieldName) {
+  	event.cancelBubble = true;
+  	console.log("Field [" + fieldName + "] has changed.");
+  	console.log(" -> new value is [" + document.forms['formAdmin'][fieldName].value + "]");
+  	if (fieldName == "Role") {
+  		if (document.forms['formAdmin'][fieldName].value == "M") {
+  			document.getElementById('fsMasterName').style.display = "none"; 	// Master
+  		} else {
+  			document.getElementById('fsMasterName').style.display = "block"; 	// Slave
+  		}
+  	}
+  	if (fieldName == "hostName") {
+  		document.forms['formAdmin']['hostName'].value = removeSpecials(document.forms['formAdmin'][fieldName].value)
+  	}
+  	if (fieldName == "deviceType") {
+  		if (document.forms['formAdmin'][fieldName].value == "S") {
+  			document.forms['formAdmin']['minState'].value = '0'; 
+  			document.forms['formAdmin']['maxState'].value = '1'; 
+  			document.forms['formAdmin']['defaultState'].value = '0'; 
+  			document.getElementById('fsMinState').style.display = "none"; 
+  			document.getElementById('fsMaxState').style.display = "none"; 
+  			document.getElementById('localPWMfreq').style.display = "none"; 
+  		} else {
+  			document.getElementById('fsMinState').style.display = "block"; 
+  			document.getElementById('fsMaxState').style.display = "block"; 
+  			document.getElementById('localPWMfreq').style.display = "block"; 
+  		}
+  	}
+  	if (fieldName == "minState" || fieldName == "maxState" || fieldName == "defaultState") {
+  		let min  = document.forms['formAdmin']['minState'].value * 1;
+  		let max  = document.forms['formAdmin']['maxState'].value * 1;
+  		let dflt = document.forms['formAdmin']['defaultState'].value * 1;
+  		console.log("defaultState[" + dflt + "], minState[" + min + "], maxState[" + max + "]");
+  		if (dflt < min) {
+  			console.log("defaultState[" + dflt + "] < minState[" + min + "]");
+  			document.forms['formAdmin']['defaultState'].value   = document.forms['formAdmin']['minState'].value;
+  		}
+  		if (dflt > max) {
+  			console.log("defaultState[" + dflt +"] > maxState[" + max + "]");
+  			document.forms['formAdmin']['defaultState'].value   = document.forms['formAdmin']['maxState'].value;
+  		}
+ 		}
+  }
+  
+  function saveFields(event, fieldName) {
+  	//alert("savebutten clicked");
+    document.getElementById("action").innerHTML = "save config";
+    request = new XMLHttpRequest();
+    request.onreadystatechange = saveFieldsReply;
+    request.open("GET", 'admin/save', true);
+    request.send(null);
+
+  }
+
+  function saveFieldsReply() {
+    if ((request.readyState == 4) && (request.status == 200)) {
+      let result = request.responseText;
+      document.getElementById("status").innerHTML = result;
+      document.getElementById("action").innerHTML = "redirect to /admin";
+    }
+  }
+    
+  function toNewLocation(locName) {
+  	let newLocation = 'http://' + document.forms['formAdmin']['deviceIPaddress'].value + locName;
+  	console.log("toNewLocation [" + newLocation + "]");
+    location.replace(newLocation);
+
+  }
+  
+  function removeSpecials(str) {
+  	console.log("removeSpecials");
+  	let str2 = str.replace(' ', '');
+    let lower = str2.toLowerCase();
+    let upper = str2.toUpperCase();
+
+    let res = "";
+    for(var i=0; i<lower.length; ++i) {
+    		if (lower[i] >= 0 || lower[i] <= 9) {
+    			res += str2[i];
+    		
+    		} else {
+    			if(lower[i] != upper[i] || lower[i].trim() === '')
+          	  res += str2[i];
+        }
+    }
+    return res;
+  }	// removeSpecials
+
+</script>  
+
+</html>
+
+<!--
+/***************************************************************************
+*
+* Permission is hereby granted, free of charge, to any person obtaining a
+* copy of this software and associated documentation files (the
+* "Software"), to deal in the Software without restriction, including
+* without limitation the rights to use, copy, modify, merge, publish,
+* distribute, sublicense, and/or sell copies of the Software, and to permit
+* persons to whom the Software is furnished to do so, subject to the
+* following conditions:
+*
+* The above copyright notice and this permission notice shall be included
+* in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+* OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+* THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* 
+***************************************************************************/
+-->

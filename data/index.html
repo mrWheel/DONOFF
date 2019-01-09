@@ -1,0 +1,607 @@
+<!--
+********************************************************************************  
+**  Program  : index.html, part of DONOFF
+**  Version  : v0.3.5 (webSockets)
+**
+**  Copyright (c) 2018 Willem Aandewiel
+**
+**  TERMS OF USE: MIT License. See bottom of file.                                                            
+********************************************************************************      
+-->
+<!DOCTYPE html>
+<html charset="UTF-8">
+<head>
+<title>DONOFF</title>
+</head>
+<style> 
+/* Start Style -------------------------------------------------------------- */
+
+/* define id element selectors (#) ------------------------------------------ */
+#image {
+    position: relative;
+}
+#image img {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+#_wrapper {
+    border: 1px solid lightgray;
+    width: 550px;	/* 90% */
+    height: 35px; 
+}
+#switch {
+    display: inline-block;
+		float: left;
+    width: 100px;
+    height: 25px;
+    text-align: center;
+    line-height: normal;
+ /* vertical-align: middle;*/
+    position:relative;
+    top: 20%; 
+ /* border: 1px solid lightgray; */
+}
+#icon {
+    display: inline-block;
+		float: left;
+    width: 50px;
+    height: 25px;
+    text-align: center;
+    line-height: normal;
+ /* vertical-align: middle;*/
+    position:relative;
+    top: 20%; 
+ /* border: 1px solid lightgray; */
+}
+/* this will match all id's like 'deviceIcon0', 'deviceIcon1' etc. */
+*[id^='deviceIcon'] {
+  position: relative;
+  top:  -4px;
+  /* left: 2px; */
+}
+
+*[id^='label'] {
+    display: inline-block;
+		float: left;
+    width: 200px;
+    height: 25px;
+    left: 10px;
+    margin: 0 auto;
+    text-align: left;
+    position:relative;
+    top: 20%; 
+ /* border: 1px solid lightgray; */
+}
+
+#slider {
+    display: inline-block;
+		float: left;
+    width: 150px;
+    height: 25px;
+    text-align: center;
+    line-height: normal;
+ /* vertical-align: middle;*/
+    position:relative;
+    top: 20%; 
+ /* border: 1px solid lightgray; */
+}
+#state {
+    display: inline-block;
+    visibility: hidden;
+		width: 80px;
+    height: 25px;
+    text-align: center;
+    line-height: normal;
+ /* vertical-align: middle;*/
+    position:relative;
+    top: 20%; 
+ /* border: 1px solid lightgray; */
+}
+#_slider { width: 150px; height: 25px; }
+
+#logWindow {
+		font-size: 14px;
+		margin-left: 20px;
+		width: 90vw;
+    height: 50vh;
+}
+/* define class selectors (.) ----------------------------------------------- */
+
+/* all class names starting with 'posIcon' */
+[class^="posIcon"]	{
+  display: table-cell;			/*set display to table cell*/
+  vertical-align: middle;		/*add vertical align middle*/
+  text-align: center;				/*add text align to center for horizontal align too*/
+}
+
+[tooltip]:before {
+    /* needed - do not touch */
+    content: attr(tooltip);
+    position: absolute;
+    width: 250px;
+    opacity: 0;
+    
+    /* customizable */
+    transition: all 0.15s ease;
+    padding: 10px;
+    color: black;
+    border-radius: 10px;
+    box-shadow: 2px 2px 1px silver;    
+}
+
+[tooltip]:hover:before {
+    /* needed - do not touch */
+    opacity: 1;
+    
+    /* customizable */
+    background: lightgray;
+    margin-top: -50px;
+    margin-left: 20px;    
+}
+/*
+[tooltip]:not([tooltip-persistent]):before {
+    pointer-events: none;
+}
+*/
+
+.dev-header h1 { 
+  display: inline;
+}
+    
+.footer {
+   position: fixed;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: gray;
+   font-size: small;
+   text-align: right;
+}
+/* define tag selectors (.) ------------------------------------------------- */
+
+body {  margin: 0; }
+button { width: 90px; }
+
+/* End Style ---------------------------------------------------------------- */
+</style>  
+
+<body>
+	<font face="Arial">
+		<div class="dev-header">
+        <h1><span id="devName" style='vertical-align:center;'>DONOFF</span> &nbsp; &nbsp; &nbsp; </h1>
+        <span id="devVersion" style='vertical-align:center;'>[version]</span>
+    </div>
+    <div style="clear:both"></div>
+		<div id="image">
+			<img src="/admin_sm.png" alt="Admin" width="25" height="25" onclick="window.location = '/admin'"; return false;>
+		</div>
+		<h3>Connected Devices</h3>
+  		<div id="resources">
+  		</div>
+  	<hr>
+  	<p><input type="checkbox" id="debug" value="doDebug" onChange="setDebugMode()"> Debug</p>
+  	<textarea id="logWindow"></textarea>
+  	<div class="footer">
+      <hr>
+  		2019 &copy; Willem Aandewiel &nbsp; &nbsp;
+  	</div>
+</body>
+<!-------------------------- E N D    H T M L --------------------------------->
+
+<script>
+"use strict";
+
+	let webSocketConn;
+  let DOMloaded = false;
+  let validJson = false;
+  let lightOn;
+  let lightOff;
+  let result;
+  let singleset;
+	let deviceNr;
+	let deviceLabel;
+	let divLabel;
+  let deviceType;
+	let deviceVal;	
+ 	let deviceIcon;			
+ 	let deviceMin;	
+ 	let deviceMax;	
+ 	let deviceOnOff;	
+ 	let deviceHB;	
+ 	let deviceNewState;
+  let ActNum;
+  let DevIcnNr;
+  let BtnLblNr;
+  let ButtonNr;
+ 	let buttonLabel;
+  let	sliderNr;
+  let dimValNr;
+	let HBNum;
+	let windowWidth = window.innerWidth;
+  let windowHeight = window.innerHeight;
+   
+  window.onload=bootsTrap;
+  
+  function bootsTrap() {
+		addLogLine("bootsTrap()");
+
+		document.getElementById('logWindow').style.display = "none";
+
+    DOMloaded = false;
+    lightOn  = "/lightOn.ico";
+    lightOff = "/lightOff.ico";
+    
+    let count = 0;
+    while (document.getElementById('devVersion').value == "[version]") {
+    	count++;
+    	addLogLine("count ["+count+"] devVersion is ["+document.getElementById('devVersion').value+"]");
+    	if (count > 10) {
+    		alert("Count="+count+" => reload from server!");
+    		window.location.reload(true);
+    	}
+    	setTimeout("", 500);
+    }
+    
+  } // bootsTrap()
+  
+  webSocketConn	= new WebSocket('ws://'+location.host+':81/', ['arduino']);
+  addLogLine(" ");
+  addLogLine("WebSocket('ws://"+location.host+":81/', ['arduino'])");
+  
+  webSocketConn.onopen 		= function () { 
+  	addLogLine("Connected!");
+   	webSocketConn.send('Connect ' + new Date()); 
+   	addLogLine("getDevInfo");
+   	webSocketConn.send("getDevInfo");
+   	addLogLine("updateDOM");
+   	webSocketConn.send("updateDOM");
+  }; 
+  webSocketConn.onclose 		= function () { 
+   	addLogLine(" ");
+   	addLogLine("Disconnected!");
+   	addLogLine(" ");
+   	let redirectButton = "<font='font-size: 25px;'>Disconneted from DONOFF webserver"; 
+   	redirectButton    += "<input type='submit' value='re-Connect' "; 
+    redirectButton    += " onclick='window.location=\"/\";' />  ";     
+		document.getElementById("resources").innerHTML = redirectButton;
+		DOMloaded	= false;
+
+  }; 
+  webSocketConn.onerror 	= function (error) 	{ 
+   	addLogLine("Error: " + error);
+   	console.log('WebSocket Error ', error);
+  };
+  webSocketConn.onmessage	= function (e) {
+   	parsePayload(e.data); 
+  };
+		
+	function parsePayload(payload) {
+  	validJson = IsJsonString(payload);
+  	if ( payload.indexOf('updateDOM:') !== -1 ) {	// not json!
+  		addLogLine("parsePayload(): received 'updateDOM:'");
+  	  let newHTML = payload.replace("updateDOM:", "");
+  		console.log("parsePayload(): [" + newHTML + "]");
+  		document.getElementById("resources").innerHTML = newHTML;
+  		DOMloaded	= true;
+  		addLogLine("send(DOMloaded)");
+		  webSocketConn.send("DOMloaded");
+		    
+  	} else if (payload.indexOf("dimmer") !== -1) {
+  		addLogLine("parsePayload(): received [" + payload + "]");
+  		//if (payload.indexOf("sliderVal") !== -1) {
+  			updateDimmer(payload);
+  		//} else {
+  			updateDimmerOnOff(payload);
+  		//}
+
+  	} else if (payload.indexOf("switch") !== -1) {
+  		addLogLine("parsePayload(): received [" + payload + "]");
+ 			updateSwitchOnOff(payload);
+  		
+  	} else if (validJson) {
+  		let jsonMessage = JSON.parse(payload);
+  		console.log("parsePayload(): [" + jsonMessage.msgType + "]");
+    	if ((jsonMessage.msgType == "devInfo")) {
+      	document.getElementById("devName").innerHTML    = jsonMessage.devName;
+      	document.getElementById("devVersion").innerHTML = jsonMessage.devVersion;
+      	addLogLine("parsePayload(): "+jsonMessage.devIPaddress);
+      }
+      if ((jsonMessage.msgType == "Status")) {
+      	updateStatus(payload);
+      }
+  	} else {
+ 			addLogLine("parsePayload(): Don't know: [" + payload + "]\r\n");
+  	}
+  };
+
+  function setDebugMode() {
+  	if (document.getElementById('debug').checked)  {
+  		addLogLine("DebugMode checked!");
+  		document.getElementById('logWindow').style.display = "block";
+  	} else {
+  		addLogLine("DebugMode unchecked");
+  		document.getElementById('logWindow').style.display = "none";
+  	}
+  }	// setDebugMode()
+  
+  function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+  }	// IsJsonString()
+
+  function existingId(elementId) {
+    if(document.getElementById(elementId)){
+      return true;
+    } 
+    console.log("cannot find elementId [" + elementId + "] reload ..");
+		addLogLine("existingId("+elementId+"): send(updateDOM)");
+    webSocketConn.send("updateDOM");
+    return false;
+    
+  } // existingId()
+
+  function addLogLine(text) {
+  	var logWindow = document.getElementById("logWindow");
+  	var addText = document.createTextNode(text+"\r\n");
+  	logWindow.appendChild(addText);
+  	document.getElementById("logWindow").scrollTop = document.getElementById("logWindow").scrollHeight 
+
+  }	// add LogLine()
+
+  
+  function updateStatus(result) {
+      let jsObject = JSON.parse(result);
+      let showJson = result.replace(/{/g, "\r\n{").replace("}]}", "}\r\n]}");
+      addLogLine("updateStatus(): "+showJson+"\r\n");
+      
+      if (!DOMloaded) console.log("updateStatus(): DOM not yet loaded ....");
+
+      for (let prop in jsObject) {
+        if (prop == "msgType")	continue;
+        DOMloaded = true;
+
+        let fieldName  	= prop; 
+        let fieldValue  = jsObject[prop]; 
+
+        for(let i = 0; i < fieldValue.length; i++) {
+        	deviceNr    = fieldValue[i].Slave;			// 0
+        	// ----------------- IP address         // 1
+        	deviceLabel = "label" + deviceNr;				// 2
+        	divLabel 		= document.getElementById(deviceLabel)
+        	deviceType  = fieldValue[i].Type;				// 3
+        	deviceMin   = fieldValue[i].minState;		// 4
+        	deviceMax   = fieldValue[i].maxState;		// 5
+        	deviceVal   = fieldValue[i].State;			// 6
+        	deviceOnOff = fieldValue[i].OnOff;			// 7
+        	deviceHB    = fieldValue[i].HB;					// 8
+        	console.log("updateStatus(): [" + divLabel.innerHTML
+        													+ "], deviceNr[" + deviceNr 
+        													+ "], deviceType[" + deviceType 
+        		                      + "], deviceMin[" + deviceMin
+        		                      + "], deviceMax[" + deviceMax
+        		                      + "], deviceVal[" + deviceVal
+        		                      + "], deviceOnOff[" + deviceOnOff
+        		                      + "], hartBeat[" + deviceHB + "]");
+
+        	if (deviceType == "S") {
+        		ActNum 		= "action" + deviceNr;
+        		DevIcnNr  = "deviceIcon" + deviceNr;
+        		BtnLblNr  = "buttonLabel" + deviceNr;
+        		ButtonNr	= "button" + deviceNr;
+        		HBNum  		= "hartBeat" + deviceNr;
+        		if (deviceVal == 0) {	// toggle from off to on
+        			deviceNewState  = "1";
+        			deviceIcon      = "<img src='"+lightOff+"' alt='Off'>";
+        			buttonLabel     = "Switch <b>On&nbsp;</b>";
+            
+        		} else {								// toggle from on to off
+        			deviceNewState  = "0";
+        			deviceIcon      = "<img src='"+lightOn+"' alt='On'>";
+        			buttonLabel     = "Switch <b>Off</b>";
+        		}
+        		if (existingId(DevIcnNr)) {
+        			if (document.getElementById(ActNum).value    != deviceNewState) {
+        				document.getElementById(DevIcnNr).innerHTML = deviceIcon;
+        				document.getElementById(ActNum).value       = deviceNewState;
+        				document.getElementById(BtnLblNr).innerHTML = buttonLabel;
+        			}
+        			document.getElementById(HBNum).innerHTML      = deviceHB;
+        		}
+        	}
+        	if (deviceType == "D") {
+        		ActNum   		= "action" + deviceNr;
+        		sliderNr 		= "slider" + deviceNr;
+        		dimValNr  	= "dimValue" + deviceNr;
+        		DevIcnNr 	  = "deviceIcon" + deviceNr;
+        		BtnLblNr 	  = "buttonLabel" + deviceNr;
+        		ButtonNr		= "button" + deviceNr;
+        		HBNum    		= "hartBeat" + deviceNr;
+        		if (deviceOnOff == 0) {	// toggle from off to on
+        			deviceNewState  = "1";
+        			deviceIcon      = "<img src='"+lightOff+"' alt='Off'>";
+        			buttonLabel     = "Dimmer <b>On&nbsp;</b>";
+            
+        		} else {								// toggle from on to off
+        			deviceNewState  = "0";
+        			deviceIcon      = "<img src='"+lightOn+"' alt='On'>";
+        			buttonLabel     = "Dimmer <b>Off</b>";
+        		}
+        		if (existingId(sliderNr)) {
+        			document.getElementById(sliderNr).value       = deviceVal;
+        			if (document.getElementById(ActNum).value    != deviceNewState) {
+        				document.getElementById(DevIcnNr).innerHTML = deviceIcon;
+        				document.getElementById(ActNum).value       = deviceNewState;
+        				document.getElementById(BtnLblNr).innerHTML = buttonLabel;
+        				document.getElementById(dimValNr).innerHTML = deviceVal;
+        			}
+        			document.getElementById(HBNum).innerHTML      = deviceHB;
+        		}
+        	}
+        	if (deviceType == "A") {
+        		analogNr = "analog" + deviceNr;
+        		if (existingId(analogNr)) {
+        			document.getElementById(analogNr).value = deviceVal;
+        		}
+        	}
+        }	// for i ...
+      }	// for prop ...
+  } // updateStatus()
+  
+  
+  function sendDimmerValue(deviceNr, value) {
+		addLogLine("sendDimmerValue(" + deviceNr + "," + value + "):");
+    dimValNr = "dimValue" + deviceNr;
+    document.getElementById(dimValNr).innerHTML=value;
+    webSocketConn.send("dimmer=" + deviceNr + ", sliderVal=" + value);
+		updateDimmer("Slider,"+deviceNr+",D,"+value);
+		
+  } // sendDimmerValue()
+  
+  
+  function updateDimmer(result) {
+  		addLogLine("updateDimmer("+result+")");
+      singleset   = result.split(",");
+    //addLogLine("updateDimmer(): singleset[1]["+singleset[1]+"],singleset[2]["+singleset[2]+"],singleset[3]["+singleset[3]+"]");
+      deviceNr    = singleset[1];
+      deviceType  = singleset[2];
+      deviceVal   = parseInt(singleset[3]);
+      ActNum			= "action" + deviceNr;
+      sliderNr    = "slider" + deviceNr;
+      dimValNr    = "dimValue" + deviceNr;
+      DevIcnNr    = "deviceIcon" + deviceNr;
+      BtnLblNr		= "buttonLabel" + deviceNr;
+      ButtonNr		= "button" + deviceNr;
+      document.getElementById(sliderNr).value = deviceVal;
+      document.getElementById(dimValNr).innerHTML = deviceVal;
+      // if slider has moved, OnOff set to On
+ 			deviceOnOff 		= 1;	// 1=On, 0=Off
+      deviceNewState  = "0";
+ 			deviceIcon      = "<img src='"+lightOn+"' alt='Off'>";
+ 			buttonLabel     = "Dimmer <b>Off</b>";
+      document.getElementById(ActNum).value = deviceNewState;
+      document.getElementById(DevIcnNr).innerHTML = deviceIcon;
+ 			document.getElementById(BtnLblNr).innerHTML = buttonLabel;
+    
+  } // updateDimmer()
+
+  
+  function sendDimmerOnOff(deviceNr, action) {
+		addLogLine("sendDimmerOnOff("+deviceNr+",D,x,"+action+"):");
+    webSocketConn.send("dimmer=" + deviceNr + ", OnOff=" + action);
+    updateDimmerOnOff("dimmer,"+deviceNr+ ",D,x," + action);
+    
+  } // sendDimmerOnOff()
+  
+  
+  function updateDimmerOnOff(result) {
+
+  		addLogLine("updateDimmerOnOff("+result+")");
+      singleset   = result.split(",");
+      deviceNr    = singleset[1];
+      deviceType  = singleset[2];
+ 			deviceOnOff = parseInt(singleset[4]);	// 1=On, 0=Off
+ 			/*
+      addLogLine("updateDimmerOnOff(): singleset[1]["+singleset[1]			  // deviceNr
+      													 	 +"],singleset[2]["+singleset[2]				// Type (D/S)
+      													 	 +"],singleset[3]["+singleset[3]				// State (sliderVal)
+      														 +"],singleset[4]["+singleset[4]+"]");	// OnOff (1/0)
+      */
+      ActNum      = "action" + deviceNr;
+      DevIcnNr    = "deviceIcon" + deviceNr;
+   		BtnLblNr 	  = "buttonLabel" + deviceNr;
+   		ButtonNr 	  = "button" + deviceNr;
+   //addLogLine("updateDimmerOnOff(): deviceNr["+deviceNr+"],ActNum["+ActNum+"],deviceOnOff["+deviceOnOff+"]");
+      if (deviceOnOff == 0) {
+        deviceNewState  = "1";
+   			deviceIcon      = "<img src='"+lightOff+"' alt='Off'>";
+   			buttonLabel     = "Dimmer <b>On&nbsp;</b>";
+      
+      } else {
+        deviceNewState  = "0";
+        deviceIcon      = "<img src='"+lightOn+"' alt='On'>";
+   			buttonLabel     = "Dimmer <b>Off</b>";
+      }
+    //addLogLine("updateDimmerOnOff(): deviceNewState["+deviceNewState+"]");
+      document.getElementById(ActNum).value       = deviceNewState;
+      document.getElementById(DevIcnNr).innerHTML = deviceIcon;
+ 			document.getElementById(BtnLblNr).innerHTML = buttonLabel;
+
+  } // updateDimmerOnOff()
+    
+  
+  function sendButton(deviceNr, action) {
+		addLogLine("sendButton("+deviceNr+","+action+"):");
+//addLogLine("switch," + deviceNr + ",S," + action + "," + action);
+    webSocketConn.send("switch=" + deviceNr + ", OnOff=" + action);
+    updateSwitchOnOff("switch,"+deviceNr+ ",D," + action + "," + action);
+
+  } // sendButton()
+
+  
+  function updateSwitchOnOff(result) {
+
+  		addLogLine("updateSwitchOnOff("+result+")");
+      singleset   = result.split(",");
+      deviceNr    = singleset[1];
+      deviceType  = singleset[2];
+ 			deviceOnOff = parseInt(singleset[4]);	// 1=On, 0=Off
+ 			/*
+      addLogLine("updateSwitchOnOff(): singleset[1]["+singleset[1]			// deviceNr
+      												 	 	 +"],singleset[2]["+singleset[2]			// Type
+      													 	 +"],singleset[3]["+singleset[3]			// State
+      														 +"],singleset[4]["+singleset[4]+"]");// OnOff
+      */
+      ActNum      = "action" + deviceNr;
+      DevIcnNr    = "deviceIcon" + deviceNr;
+   		BtnLblNr 	  = "buttonLabel" + deviceNr;
+   		ButtonNr 	  = "button" + deviceNr;
+    //addLogLine("updateSwitchOnOff(): deviceNr["+deviceNr+"],ActNum["+ActNum+"],deviceOnOff["+deviceOnOff+"]");
+      if (deviceOnOff == 0) {
+        deviceNewState  = "1";
+   			deviceIcon      = "<img src='"+lightOff+"' alt='Off'>";
+   			buttonLabel     = "Switch <b>On&nbsp;</b>";
+      
+      } else {
+        deviceNewState  = "0";
+        deviceIcon      = "<img src='"+lightOn+"' alt='On'>";
+   			buttonLabel     = "Switch <b>Off</b>";
+      }
+    //addLogLine("updateSwitchOnOff(): deviceNewState["+deviceNewState+"]");
+      document.getElementById(ActNum).value       = deviceNewState;
+      document.getElementById(DevIcnNr).innerHTML = deviceIcon;
+ 			document.getElementById(BtnLblNr).innerHTML = buttonLabel;
+
+  } // updateSwitchOnOff()
+  
+</script>
+</html>
+
+<!--
+/***************************************************************************
+*
+* Permission is hereby granted, free of charge, to any person obtaining a
+* copy of this software and associated documentation files (the
+* "Software"), to deal in the Software without restriction, including
+* without limitation the rights to use, copy, modify, merge, publish,
+* distribute, sublicense, and/or sell copies of the Software, and to permit
+* persons to whom the Software is furnished to do so, subject to the
+* following conditions:
+*
+* The above copyright notice and this permission notice shall be included
+* in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+* OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+* THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* 
+***************************************************************************/
+-->
