@@ -9,4 +9,4 @@ disadvantage of the SONOFF switches is .. well they are switches (Switch On Off)
 
 Albeit: I introduce to you: DONOFF (Dimmer On Off)!
 
-
+![DONOFF_Master](/images/DONOFF_Server.png)
