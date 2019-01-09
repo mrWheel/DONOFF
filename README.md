@@ -7,6 +7,6 @@ disadvantage of the SONOFF devices is the poor software. To make the switches us
 party firmware and install a Home-Automation solution on an other computer to control the switches. Another 
 disadvantage of the SONOFF switches is .. well they are switches (Switch On Off). So there is room for improvement!
 
-Albeit: I introduce to you: DONOFF (Dimmer On Off)!
+Albeit: I introduce to you: [DONOFF](https://willem.aandewiel.nl/index.php/2018/12/03/donoff-wifi-enabled-light-dimmer/) (Dimmer On Off)!
 
 ![DONOFF_Master](/images/DONOFF_Server.png)
