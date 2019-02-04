@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : extSwitch, part of DONOFF
-**  Version  : v0.3.5
+**  Version  : v0.3.6
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -19,7 +19,7 @@ enum {
   LONGRELEASED
 };
 
-uint32_t  switchTime;
+uint32_t  switchTime, resetTimer;
 uint8_t   switchState = NOTPRESSED;
 int8_t    upDown = 5;
 
@@ -33,7 +33,8 @@ uint8_t switchHandle(int extSwitchGPIO) {
   bool pressed = !digitalRead(extSwitchGPIO);
   
   if (!pressed) { // switch not pressed
-    switchTime == 0;
+    switchTime = 0;
+    resetTimer = 0;
     if (switchState != NOTPRESSED) {
       if (switchState == SHORTPRESSED) {
         _dThis = true;
@@ -54,6 +55,7 @@ uint8_t switchHandle(int extSwitchGPIO) {
   /* from here on switched is pressed */
   if (switchState == NOTPRESSED) {
      switchTime   = millis();
+     resetTimer   = 0;
      switchState  = INTRANSITION;
   }
 
@@ -69,6 +71,7 @@ uint8_t switchHandle(int extSwitchGPIO) {
                             Debugln("Long Pressed ..");
                             switchState = LONGPRESSED;
                             switchTime  = millis();
+                            resetTimer  = millis();
                             return LONGPRESSED;
                           }
                           break;
@@ -77,6 +80,23 @@ uint8_t switchHandle(int extSwitchGPIO) {
                             Debugln("Long Pressed ..");
                             switchState = LONGPRESSED;
                             switchTime  = millis();
+                            if ((resetTimer > 0) && (millis() - resetTimer) > 35000) {  // reset na 40 seconden!
+                              _dThis = true;
+                              Debugf("Reset device!! [%d]\n", (millis() - resetTimer));
+                              bool State = false;
+                              digitalWrite(localDeviceGPIO, LOW);        // switch
+                              for (int i = 0; i< 6; i++) {
+                                digitalWrite(localDeviceGPIO, !digitalRead(localDeviceGPIO));        // switch
+                                delay(1000);
+                              }
+                              _dThis = true;
+                              Debugln("\n\n=========================================================================");
+                              Debugf("Butten pressed for [%d] seconds .. Reset device!!\n", (millis() - resetTimer));
+                              Debugln("=========================================================================\n");
+                              DebugFlush();
+                              delay(500);
+                              ESP.reset();
+                            }
                             return LONGPRESSED;
                           }
   } // switch()

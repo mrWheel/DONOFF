@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : menuStuff, part of DONOFF
-**  Version  : v0.3.5
+**  Version  : v0.3.6
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -153,7 +153,7 @@ void handleAnimate() {
   if (!animateDimUpDown || nextStep > millis()) {  // not yet time to make a next step
     return;
   }
-  nextStep += 500;
+  nextStep = millis() + 500;
   
   if (deviceArray[0].Type != 'D') {
     animateDimUpDown = false;
@@ -161,12 +161,14 @@ void handleAnimate() {
   }
 
   deviceArray[0].State += upDown; 
-  if (deviceArray[0].State <= 0) {
-    deviceArray[0].State = 0;
+  if (deviceArray[0].State <= deviceArray[0].minState) {
+    deviceArray[0].State = deviceArray[0].minState;
+    nextStep = millis() + 2000;
     upDown = 0 - upDown;
   }
   if (deviceArray[0].State >= 100) {
     deviceArray[0].State = 100;
+    nextStep = millis() + 1000;
     upDown = 0 - upDown;
   }
   deviceArray[0].OnOff = 1;
@@ -186,9 +188,23 @@ void handleAnimate() {
 
 
 //=======================================================================
+uint16_t getNumberInput() {
+//=======================================================================
+  String nIn = "";
+  
+  TelnetStream.setTimeout(5000);
+  nIn = TelnetStream.readStringUntil('\n');
+
+  return nIn.toInt();
+  
+} // getNumberInput()
+
+
+//=======================================================================
 void handleKeyInput() {
 //=======================================================================
-  String slavesInfo;  
+  String slavesInfo, response; 
+  int16_t num; 
   
   while (TelnetStream.available() > 0) {
     yield();
@@ -199,19 +215,44 @@ void handleKeyInput() {
     }
 
     switch(inChar) {
-      case 'b':
-      case 'B':     showStatus();
-                    break;
-      case 'c':
-      case 'C':     slavesInfo = listAllSlaves(false);
-                    Debugln(slavesInfo);
-                    break;
-      case 'd':
-      case 'D':     if (animateDimUpDown) {
+      case 'a':
+      case 'A':     if (animateDimUpDown) {
                       animateDimUpDown = false;
                     } else {
                       animateDimUpDown = true;
+                      handleAnimate();
                     }
+                    break;
+      case 'b':
+      case 'B':     showStatus();
+                    break;
+      case 'd':
+      case 'D':     {
+                      animateDimUpDown = false;
+                      Debug("DIMM>");
+                      num = getNumberInput();
+                      if (num >= deviceMinState && num <= 100) {
+                        deviceArray[0].State    = num;
+                        deviceArray[0].OnOff    = 1;
+                      } else if (num == 0) {
+                        deviceArray[0].OnOff    = 0;
+                      } else {
+                        deviceArray[0].State    = deviceMinState;
+                        deviceArray[0].OnOff    = 1;
+                      }
+                      setLocalDevice();
+                      handleStatus();
+                      if (deviceArray[0].Type == 'D') response = "dimmer";
+                      else                            response = "switch";
+                      response += "," + String(0);
+                      response += "," + String(deviceArray[0].Type);
+                      response += "," + String(deviceArray[0].State);
+                      response += "," + String(deviceArray[0].OnOff);
+                      webSocket.broadcastTXT(response);  // tell all other browser-clients
+                    }
+                    break;
+      case 'f':
+      case 'F':     listSPIFFS();
                     break;
       case 'h':
       case 'H':     doShowHeap = !doShowHeap;
@@ -219,10 +260,39 @@ void handleKeyInput() {
       case 'l':
       case 'L':     readConfig();
                     break;
+      case 'M':     {
+                      animateDimUpDown = false;
+                      Debug("MINVAL>");
+                      num = getNumberInput();
+                      if (num > 1 && num <= 100) {
+                        deviceArray[0].minState = num;
+                        deviceMinState          = num;
+                      }
+                      setLocalDevice();
+                      handleStatus();
+                    }
+                    break;
+      case 'P':     {
+                      animateDimUpDown = false;
+                      Debug("PWM>");
+                      num = getNumberInput();
+                      if (num >= 1 && num <= 2000) {
+                        localPWMfreq         = num;
+                        analogWriteFreq(localPWMfreq);
+                        deviceArray[0].OnOff = 1;
+                        Debugf("PWM frequency set to [%dHz]\n", localPWMfreq);
+                        setLocalDevice();
+                      }
+                    }
+                    break;
       case 'R':     ESP.reset();
                     break;
       case 's':
-      case 'S':     listSPIFFS();
+      case 'S':     slavesInfo = listAllSlaves(false);
+                    Debugln(slavesInfo);
+                    break;
+      case 'U':     deviceMinState = deviceArray[0].minState;
+                    writeConfig();
                     break;
       case 'W':     { WiFiManager manageWiFi;
                       _dThis = true;
@@ -235,19 +305,23 @@ void handleKeyInput() {
                     }
                     break;
       default:      Debugln("\nCommandos are:\n");
-                    Debugln("   B - Board, Build info & System Status");
-                    Debugln("   C - List All Slaves");
                     if (animateDimUpDown) {
-                      Debugln("   D - Stop dim-Up/Down");
+                      Debugln("   A - stop Animation");
                     } else {
-                      Debugln("   D - Start dim-Up/Down");
+                      Debugln("   A - start Animation");
                     }                    
-                    Debug("   H - Toggle Heap Trace "); 
+                    Debugln("   D - set Dimmlevel");
+                    Debugln("   B - Board, Build info & system status");
+                    Debugln("   F - list Files on SPIFFS");
+                    Debug("   H - toggle Heap trace "); 
                     if (doShowHeap) { Debugln("OFF"); }
                     else            { Debugln("ON");  }
                     Debugln("   L - Load donoff.cfg from SPIFFS");
+                    Debugln("  *M - set Minimal dimmlevel");
+                    Debugln("  *P - set PWM frequency");
                     Debugln("  *R - Reboot");
-                    Debugln("   S - list SPIFFS");
+                    Debugln("   S - list all Slaves");
+                    Debugln("  *U - Update config minState and PWMfreq");
                     Debugln("  *W - reset WiFi credentials");
                     Debugln(" ");
 

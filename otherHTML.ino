@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : otherHTML, part of DONOFF
-**  Version  : v0.3.5
+**  Version  : v0.3.6
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **

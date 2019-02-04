@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : maintenancePage, part of DONOFF
-**  Version  : v0.3.5
+**  Version  : v0.3.6
 **
 **  Mostly stolen from https://www.arduinoforum.de/User-Fips
 **  See also https://www.arduinoforum.de/arduino-Thread-SPIFFS-DOWNLOAD-UPLOAD-DELETE-Esp8266-NodeMCU

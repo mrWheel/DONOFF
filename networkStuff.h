@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : networkStuff, part of DONOFF
-**  Version  : v0.3.5
+**  Version  : v0.3.6
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -9,35 +9,17 @@
 ***************************************************************************      
 */
 
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <ESP8266WiFi.h>        // version 1.0.0
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <ESP8266WebServer.h>   // Version 1.0.0
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-//#include <DNSServer.h>  
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <WiFiUdp.h>
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <ESP8266mDNS.h>
-
-//  https://github.com/tzapu/WiFiManager
-#include <WiFiManager.h>        // version 0.14.0
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <ArduinoOTA.h>         // Version 1.0.0
-
-//  https://github.com/jandrassy/TelnetStream
-#include <TelnetStream.h>       // Version 0.0.1
-
+#include <ESP8266WiFi.h>        // version 1.0.0 - part of ESP8266 Core https://github.com/esp8266/Arduino
+#include <ESP8266WebServer.h>   // Version 1.0.0 - part of ESP8266 Core https://github.com/esp8266/Arduino
+//#include <DNSServer.h>        // part of ESP8266 Core https://github.com/esp8266/Arduino
+#include <WiFiUdp.h>            // part of ESP8266 Core https://github.com/esp8266/Arduino
+#include <ESP8266mDNS.h>        // part of ESP8266 Core https://github.com/esp8266/Arduino
+#include <WiFiManager.h>        // version 0.14.0 - https://github.com/tzapu/WiFiManager
+#include <ArduinoOTA.h>         // Version 1.0.0 - part of ESP8266 Core https://github.com/esp8266/Arduino
+#include <TelnetStream.h>       // Version 0.0.1 - https://github.com/jandrassy/TelnetStream
 #include <WebSocketsServer.h>
 //#include <Hash.h>
-
-//  part of ESP8266 Core https://github.com/esp8266/Arduino
-#include <FS.h>
+#include <FS.h>                 // part of ESP8266 Core https://github.com/esp8266/Arduino
 
 bool _dThis = false;
 
@@ -131,6 +113,7 @@ void startArduinoOTA() {
     String type;
     
     OtaInProgress = true;
+
     webSocket.disconnect();
     webSocket = 0;    
     

@@ -2,7 +2,7 @@
 ***************************************************************************  
 **  Program  : DONOFF
 */
-#define  _FW_VERSION  "v0.3.5"
+#define  _FW_VERSION  "v0.3.6 (" +String( __DATE__) + ")"
 /*
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -1149,7 +1149,6 @@ void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   webSocket.loop();
-//MDNS.update();
   handleLocalSwitch(masterIPaddress, deviceArray[0], switchHandle(localSwitchGPIO));
   handleAnimate();
   handleKeyInput(); // menu
@@ -1164,7 +1163,8 @@ void loop() {
     _dThis = true;
     Debugf("FreeHeap min[%ld], max[%ld], now %ld bytes\n", minHeap, maxHeap, freeHeap);
   }
-  
+
+  /******************* send Heartbeat to Master *********************/
   if (!deviceIsMaster && millis() > aliveTime) {
     _dThis = true;
     Debugf("Send Heartbeat to master @%s\n", masterIPaddress.c_str());
