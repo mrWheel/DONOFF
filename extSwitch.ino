@@ -110,6 +110,8 @@ uint8_t switchHandle(int extSwitchGPIO) {
 //===========================================================================================
 void handleLocalSwitch(String IPaddress, device_type &localDevice, int16_t swState) {
 //===========================================================================================
+  static uint32_t flipTime = millis();
+  static int16_t  flipNo   = 0;
   String response;
   char xMsg[10];
   
@@ -125,6 +127,31 @@ void handleLocalSwitch(String IPaddress, device_type &localDevice, int16_t swSta
                         response += "," + String(localDevice.State);
                         response += "," + String(localDevice.OnOff);
                         webSocket.broadcastTXT(response);  // tell all other browser-clients
+                        flipNo++;
+                        //_dThis = true;
+                        //Debugf("Switch flipped [%d] times ..\n", flipNo);
+
+                        //--- 6 times flipped within flipTime
+                        if ((flipNo > 6) && (flipTime > millis())) {
+                          _dThis = true;
+                          Debugf("Reset device!! flipped [%d] times in 10 seconds ..\n", flipNo);
+                          bool State = false;
+                          digitalWrite(localDeviceGPIO, LOW);        // switch
+                          for (int i = 0; i< 6; i++) {
+                            digitalWrite(localDeviceGPIO, !digitalRead(localDeviceGPIO));        // switch
+                            delay(500);
+                          }
+                          _dThis = true;
+                          Debugln("\n\n=========================================================================");
+                          Debugf("Butten pressed for [%d] times .. Reset device!!\n", flipNo);
+                          Debugln("=========================================================================\n");
+                          DebugFlush();
+                          delay(500);
+                          ESP.reset();
+                        } else if (millis() > flipTime) {
+                          flipTime = millis() + 10000;  // reset flipTime
+                          flipNo   = 0;                 // .. and flipNo
+                        }
                         // continue with LONGRELEASED                    
                             
     case LONGRELEASED:  upDown = 0 - upDown; _dThis = true; Debug("upDown: "); Debugln(upDown); 
