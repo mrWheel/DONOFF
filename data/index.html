@@ -1,9 +1,9 @@
 <!--
 ********************************************************************************  
 **  Program  : index.html, part of DONOFF
-**  Version  : v0.3.5 (webSockets)
+**  Version  : v0.3.6 (webSockets)
 **
-**  Copyright (c) 2018 Willem Aandewiel
+**  Copyright (c) 2019 Willem Aandewiel
 **
 **  TERMS OF USE: MIT License. See bottom of file.                                                            
 ********************************************************************************      
@@ -193,8 +193,9 @@ button { width: 90px; }
 "use strict";
 
 	let webSocketConn;
-  let DOMloaded = false;
-  let validJson = false;
+  let DOMloaded 	= false;
+  let validJson 	= false;
+  let needReload 	= true;
   let lightOn;
   let lightOff;
   let result;
@@ -222,9 +223,15 @@ button { width: 90px; }
   let windowHeight = window.innerHeight;
    
   window.onload=bootsTrap;
+  window.onfocus = function() {
+  	if (needReload) {
+  		window.location.reload(true);
+  	}
+  };
   
   function bootsTrap() {
 		addLogLine("bootsTrap()");
+		needReload = true;
 
 		document.getElementById('logWindow').style.display = "none";
 
@@ -256,6 +263,7 @@ button { width: 90px; }
    	webSocketConn.send("getDevInfo");
    	addLogLine("updateDOM");
    	webSocketConn.send("updateDOM");
+   	needReload	= false;
   }; 
   webSocketConn.onclose 		= function () { 
    	addLogLine(" ");
@@ -266,6 +274,7 @@ button { width: 90px; }
     redirectButton    += " onclick='window.location=\"/\";' />  ";     
 		document.getElementById("resources").innerHTML = redirectButton;
 		DOMloaded	= false;
+   	needReload	= true;
 
   }; 
   webSocketConn.onerror 	= function (error) 	{ 
