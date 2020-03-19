@@ -17,7 +17,7 @@
 #include <WiFiManager.h>        // version 0.14.0 - https://github.com/tzapu/WiFiManager
 #include <ArduinoOTA.h>         // Version 1.0.0 - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <TelnetStream.h>       // Version 0.0.1 - https://github.com/jandrassy/TelnetStream
-#include <WebSocketsServer.h>
+#include <WebSocketsServer.h>   // https://github.com/Links2004/arduinoWebSockets
 //#include <Hash.h>
 #include <FS.h>                 // part of ESP8266 Core https://github.com/esp8266/Arduino
 
