@@ -2,13 +2,17 @@
 ***************************************************************************  
 **  Program  : DONOFF
 */
-#define  _FW_VERSION  "v0.3.6 (" +String( __DATE__) + ")"
+#define  _FW_VERSION  "v0.4.1 (23-03-2020)"
 /*
-**  Copyright (c) 2019 Willem Aandewiel
+**  Copyright (c) 2019 - 2020 Willem Aandewiel
 **
 **  TERMS OF USE: MIT License. See bottom of file.                                                            
 ***************************************************************************      
 **     DONOFF:  Generic ESP8266 Flash Size 1M (128KB SPIFFS) 
+**              BuiltIn LED GPIO1
+**              PWM-out GPIO3
+**              
+**     DONOFF:  Generic ESP8266 Flash Size 4M (1MB or 2MB SPIFFS) 
 **              BuiltIn LED GPIO1
 **              PWM-out GPIO3
 **               
@@ -16,7 +20,7 @@
 **              BuiltIn LED 13
 **              Switch  pin 12            
 **               
-**     NODEMCU: NodeMCU 1.0 Flash Size 4M (1MB SPIFFS)
+**     NODEMCU: NodeMCU 1.0 Flash Size 4M (1MB or 2MB SPIFFS)
 **              BuiltIn LED 16
 **              PWM-out every free pin available            
 **             
@@ -38,6 +42,8 @@
 **    - Erase Flash: "Only Sketch"
 **    - Port: "ESP01-DSMR at <-- IP address -->"
 **
+**  Compiled and tested with Arduino IDE 1.8.10
+**  and ESP8266 core 2.6.3 
 */
 
 #include "networkStuff.h"
@@ -77,7 +83,7 @@ WiFiClient        wifiClient;
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP           Udp;
 
-static char *flashMode[]    { "QIO", "QOUT", "DIO", "DOUT", "UnKnown" };
+const char *flashMode[]    { "QIO", "QOUT", "DIO", "DOUT", "UnKnown" };
 
 bool      deviceIsMaster      = false;
 //String  deviceHostName      = "DONOFF"; // defined in networkStuff.h
@@ -93,7 +99,7 @@ String    masterIPaddress     = "0.0.0.0";
 int       localSwitchGPIO     = -1;   // -1 = no Switch
 bool      localSwitchToggle   = false;
 int       localDeviceGPIO     = LED_BUILTIN;
-int       localBuiltInLed     = LED_BUILTIN;
+int       localBuiltInLed     = -1; // disable by default
 bool      localDeviceInverted = false;
 int8_t    webSocketDevNr      = 0;
 uint32_t  webSocketHeartbeat  = 0;
@@ -704,7 +710,7 @@ String listAllSlaves(bool doHtml) {
 //===========================================================================================
   String slavesInfo = "";
 
-  MDNS.begin(deviceHostName.c_str());
+  //(--)MDNS.begin(deviceHostName.c_str());
   int n = MDNS.queryService("dooSlave", "tcp"); // Send out query for esp tcp services
 
   if (!doHtml) {
@@ -836,7 +842,7 @@ void checkHeartBeat() {
 //===========================================================================================
 void sendHTTPrequest(String serverIP, int8_t deviceInx) {
 //===========================================================================================
-    HTTPClient http; 
+    HTTPClient httpClient; 
 
     statusChanged = false;
 
@@ -870,11 +876,11 @@ void sendHTTPrequest(String serverIP, int8_t deviceInx) {
     Debug("?");
     Debugln(cMsg);
      
-    http.begin(URL);              // Specify request destination
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");    //Specify content-type header
+    httpClient.begin(wifiClient, URL);              // Specify request destination
+    httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");    //Specify content-type header
  
-    int16_t httpCode = http.POST(cMsg);   //Send the request
-    String cMsg = http.getString();    //Get the response payload
+    int16_t httpCode = httpClient.POST(cMsg);   //Send the request
+    String cMsg = httpClient.getString();       //Get the response payload
  
     _dThis = true;
     Debugf("httpCode     [%d]", httpCode);        //Print HTTP return code
@@ -894,7 +900,7 @@ void sendHTTPrequest(String serverIP, int8_t deviceInx) {
       }
     }
  
-    http.end();  //Close connection    server.send(200, "text/plain", responseURL);
+    httpClient.end();  //Close connection    server.send(200, "text/plain", responseURL);
 
 }   // sendHTTPrequest()
 
@@ -908,7 +914,12 @@ void setup() {
   _dThis = true;
   Debugln("\nStart DONOFF system");
   localDeviceGPIO = LED_BUILTIN;  
-  localBuiltInLed = LED_BUILTIN;  
+  localBuiltInLed = -1;  
+
+  startWiFi();
+  Debugf("SSID:[%s],  IP:[%s], Gateway:[%s]\r\n", WiFi.SSID().c_str()
+                                                , WiFi.localIP().toString().c_str()
+                                                , WiFi.gatewayIP().toString().c_str());
 
 //================ SPIFFS =========================================
   if (!SPIFFS.begin()) {
@@ -921,9 +932,10 @@ void setup() {
     Debugln("SPIFFS Mount succesfull");
     SPIFFSmounted = true;
   }
- //=============end SPIFFS =========================================
+//=============end SPIFFS =========================================
 
   readConfig();
+  Debugln("Done reading Config");
   noOfDevices = 0;
   deviceArray[0].deviceHostName = deviceHostName;
   deviceArray[0].IPaddress      = deviceIPaddress;
@@ -933,8 +945,11 @@ void setup() {
   deviceArray[0].maxState       = deviceMaxState;
   deviceArray[0].State          = deviceDefaultState;
   deviceArray[0].OnOff          = 0;
+  Debug("Done setup deviceArray[0] with hostname[");
+  Debug(deviceHostName);  Debugln("]");
   
   //writeConfig();
+
 
   if (localSwitchGPIO >= 0) {
     pinMode(localSwitchGPIO, INPUT);
@@ -942,14 +957,14 @@ void setup() {
   pinMode(localDeviceGPIO, OUTPUT);
   if (localBuiltInLed >= 0) {
     pinMode(localBuiltInLed, OUTPUT);
-  
     for(int I=0; I<3; I++) {
       digitalWrite(localBuiltInLed, !digitalRead(localBuiltInLed));
       delay(2000);
     }
     digitalWrite(localBuiltInLed, _LED_OFF);  // HIGH is OFF
   }
-  sprintf(cMsg, "Last reset reason: [%s]", ESP.getResetReason().c_str());
+
+  snprintf(cMsg, sizeof(cMsg), "Last reset reason: [%s]", ESP.getResetReason().c_str());
   _dThis = true;
   Debugln(cMsg);
   DebugFlush();
@@ -957,8 +972,12 @@ void setup() {
   if (localBuiltInLed >= 0) {
     digitalWrite(localBuiltInLed, _LED_ON);
   }
-
+/*
   startWiFi();
+  Debugf("SSID:[%s],  IP:[%s], Gateway:[%s]\r\n", WiFi.SSID().c_str()
+                                                , WiFi.localIP().toString().c_str()
+                                                , WiFi.gatewayIP().toString().c_str());
+*/
   if (localBuiltInLed >= 0) {
     for (int L=0; L < 10; L++) {
       digitalWrite(localBuiltInLed, !digitalRead(localBuiltInLed));
@@ -968,36 +987,41 @@ void setup() {
   }
   
   startTelnet();
-  startArduinoOTA();
 
 /*  
  *   list all services with the cammand:
  *   dns-sd -B _dooSlave .
  *   dns-sd -B _dooMaster .
 */
+  _dThis = true;
+  Debugf("[1] mDNS setup as [%s.local]\r\n", deviceHostName.c_str());
   if (MDNS.begin(deviceHostName.c_str())) {              // Start the mDNS responder for thisDevice.local
     _dThis = true;
-    Debugf("[1] mDNS responder started as [%s.local]\n", deviceHostName.c_str());
+    Debugf("[2] mDNS responder started as [%s.local]\n", deviceHostName.c_str());
     if (deviceIsMaster) MDNS.addService("dooMaster", "tcp", 8080);
     else                MDNS.addService("dooSlave", "tcp", 8080);
     MDNS.addService("arduino", "tcp", 81);
+    MDNS.addService("http", "tcp", 80);
   } else {
     _dThis = true;
-    Debugln("[1] Error setting up MDNS responder!");
+    Debugln("[3] Error setting up MDNS responder!");
   }
   MDNS.port(81);
   MDNS.port(8080);
+
+  startArduinoOTA();
 
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
 
   // Save the IP address
   deviceIPaddress = WiFi.localIP().toString();
+  deviceArray[0].IPaddress = deviceIPaddress;
   if (deviceLabel == "?") {
     deviceLabel = WiFi.localIP().toString();
     deviceArray[0].Label = deviceLabel;
   }
-  
+  Debugf("deviceIPaddress[%s], deviceLabel[%s]\r\n", deviceIPaddress.c_str(), deviceLabel.c_str());
   if (deviceIsMaster) {
     _dThis = true;
     Debugln("Starting UDP");
@@ -1149,6 +1173,7 @@ void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   webSocket.loop();
+  MDNS.update();
   handleLocalSwitch(masterIPaddress, deviceArray[0], switchHandle(localSwitchGPIO));
   handleAnimate();
   handleKeyInput(); // menu

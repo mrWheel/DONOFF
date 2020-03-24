@@ -1,5 +1,4 @@
-/*
-***************************************************************************  
+/**************************************************************************  
 **  Program  : configStuff, part of DONOFF
 **  Version  : v0.3.6
 **
@@ -37,7 +36,7 @@ void writeConfig() {
 //=======================================================================
 
   _dThis = true;
-  Debugf(" ..\n", _CONFIG_FILE);
+  Debugf("writeConfig(): % ..\n", _CONFIG_FILE);
 
   File file = SPIFFS.open(_CONFIG_FILE, "w");
 
@@ -89,11 +88,12 @@ void readConfig() {
   String words[10];
   int p = 0;
 
-  Debugf(" ..\n", _CONFIG_FILE);
+  Debugf("readConfig() %s ..", _CONFIG_FILE);
 
   masterHostName          = _MASTERDONOFF;
 
   if (!SPIFFS.exists(_CONFIG_FILE)) {
+    Debug(".. not found, setup initially ..");
     deviceFirstStart        = true;
     deviceHostName          = "DONOFFnew";
     deviceIPaddress         = WiFi.localIP().toString();  // not likely to work .. first read there's no WiFi ..
@@ -102,14 +102,15 @@ void readConfig() {
     deviceLabel             = "?";
     localSwitchGPIO         = -1;
     localSwitchToggle       = true;
-    localBuiltInLed         = 1;  // this is for the PCB with a ESP-01
-    localSwitchGPIO         = 2;  // this is pin4 for the PCB with a ESP-01
-    localDeviceGPIO         = 3;  // this is pin8 for the PCB with a ESP-01
+    localBuiltInLed         = -1;  // this is for the PCB with a ESP-01 (disable by default)
+    localSwitchGPIO         =  2;  // this is pin4 for the PCB with a ESP-01
+    localDeviceGPIO         =  3;  // this is pin8 for the PCB with a ESP-01
     localDeviceInverted     = false;
     localPWMfreq            = 500;  // Hz
     deviceType              = 'D';
     deviceDefaultState      = 1;
-    Debugln(" .. done (file not found!)");
+    Debugln(" .. done");
+    //writeConfig();
     return;
   } else {
     deviceFirstStart        = false;
@@ -119,9 +120,10 @@ void readConfig() {
 
   _dThis = true;
   while(file.available()) {
+    Debug(".");
     sTmp                = file.readStringUntil('\n');
     sTmp.replace("\r", "");
-    Debugf("[%s] \n", sTmp.c_str(), sTmp.length());
+  //Debugf("[%s] (%d)\n", sTmp.c_str(), sTmp.length());
     splitString(sTmp, '=', words, 10);
   //Debugln("");
   //Debug(words[0].c_str()); Debug(" = "); Debugln(words[1].c_str());

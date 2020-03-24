@@ -18,7 +18,6 @@
 #include <ArduinoOTA.h>         // Version 1.0.0 - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <TelnetStream.h>       // Version 0.0.1 - https://github.com/jandrassy/TelnetStream
 #include <WebSocketsServer.h>   // https://github.com/Links2004/arduinoWebSockets
-//#include <Hash.h>
 #include <FS.h>                 // part of ESP8266 Core https://github.com/esp8266/Arduino
 
 bool _dThis = false;
@@ -28,18 +27,21 @@ bool _dThis = false;
                                                             _dThis = false;  \
                                                          } \
                                                          TelnetStream.print(__VA_ARGS__); \
+                                                         DebugFlush(); \
                         })
 #define Debugln(...)    ({ Serial.println(__VA_ARGS__);  if (_dThis == true) { \
                                                             TelnetStream.printf("%s(%d): ",__FUNCTION__, __LINE__); \
                                                             _dThis = false; \
                                                          } \
                                                          TelnetStream.println(__VA_ARGS__); \
+                                                         DebugFlush(); \
                         })
 #define Debugf(...)     ({ Serial.printf(__VA_ARGS__);   if (_dThis == true) { \
                                                             TelnetStream.printf("%s(%d): ",__FUNCTION__, __LINE__); \
                                                             _dThis = false; \
                                                          } \
                                                          TelnetStream.printf(__VA_ARGS__); \
+                                                         DebugFlush(); \
                         })
 #define DebugFlush()    ({ Serial.flush();               TelnetStream.flush(); })
 
@@ -67,7 +69,7 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 void startWiFi() {
   WiFiManager manageWiFi;
 
-  String thisAP = deviceHostName + WiFi.macAddress();
+  String thisAP = deviceHostName +"-"+ WiFi.macAddress();
   
   manageWiFi.setDebugOutput(true);
   
